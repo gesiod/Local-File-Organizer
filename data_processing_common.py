@@ -1,5 +1,6 @@
 import os
 import re
+import shutil
 import datetime  # Import datetime for date operations
 from rich.progress import Progress, TextColumn, BarColumn, TimeElapsedColumn
 
@@ -41,7 +42,7 @@ def process_files_by_date(file_paths, output_path, dry_run=False, silent=False, 
         # Convert to datetime
         mod_datetime = datetime.datetime.fromtimestamp(mod_time)
         year = mod_datetime.strftime('%Y')
-        month = mod_datetime.strftime('%B')  # e.g., 'January', or use '%m' for month number
+        month = mod_datetime.strftime('%Y-%m - %B')  # e.g., 'January', or use '%m' for month number
         # Create directory path
         dir_path = os.path.join(output_path, year, month)
         # Prepare new file path
@@ -53,6 +54,7 @@ def process_files_by_date(file_paths, output_path, dry_run=False, silent=False, 
         operation = {
             'source': file_path,
             'destination': new_file_path,
+            'destination_folder': dir_path,
             'link_type': link_type,
         }
         operations.append(operation)
@@ -114,6 +116,7 @@ def process_files_by_type(file_paths, output_path, dry_run=False, silent=False, 
         operation = {
             'source': file_path,
             'destination': new_file_path,
+            'destination_folder': dir_path,
             'link_type': link_type,
         }
         operations.append(operation)
@@ -177,6 +180,7 @@ def execute_operations(operations, dry_run=False, silent=False, log_file=None):
             destination = operation['destination']
             link_type = operation['link_type']
             dir_path = os.path.dirname(destination)
+            destination_folder = operation['destination_folder']
 
             if dry_run:
                 message = f"Dry run: would create {link_type} from '{source}' to '{destination}'"
@@ -186,8 +190,11 @@ def execute_operations(operations, dry_run=False, silent=False, log_file=None):
 
                 try:
                     if link_type == 'hardlink':
-                        os.link(source, destination)
+                        print(f"hardlink: {destination}")
+                        #os.link(source, destination)                        
+                        shutil.copy(source, dir_path)
                     else:
+                        print(f"symlink: {destination}")
                         os.symlink(source, destination)
                     message = f"Created {link_type} from '{source}' to '{destination}'"
                 except Exception as e:
